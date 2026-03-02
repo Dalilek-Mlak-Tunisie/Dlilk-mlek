@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دليلك ملك - النظام المحمي</title>
+    <style>
+        body { background: #000; color: gold; font-family: sans-serif; text-align: center; margin: 0; padding: 0; }
+        .page { display: none; padding: 10px; }
+        .active { display: block; }
+        .header { background: #1a1a1a; padding: 10px; border-bottom: 2px solid gold; margin-bottom: 10px; }
+        
+        .dashboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; background: #111; padding: 8px; border: 1px solid #333; margin-bottom: 10px; font-size: 10px; }
+        .dash-val { padding: 4px 2px; border: 1px solid #444; border-radius: 3px; color: #fff; }
+        .removed { text-decoration: line-through; opacity: 0.1; background: #222; }
+
+        .info-card { background: #ffcc00; color: #000; padding: 15px; border-radius: 12px; margin: 10px; font-weight: bold; border: 2px solid gold; }
+        .whatsapp-btn { display: inline-flex; align-items: center; background: #25d366; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 14px; margin-top: 12px; border: 1px solid #fff; }
+        
+        input { padding: 12px; width: 85%; margin: 8px 0; border-radius: 8px; border: 1px solid gold; background: #111; color: #fff; text-align: center; }
+        .btn-main { background: gold; color: #000; padding: 12px; width: 90%; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 5px; }
+
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 450px; margin: auto; }
+        .box { background: linear-gradient(145deg, #222, #000); border: 2px solid gold; padding: 18px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; color: gold; }
+        .opened { background: #333 !important; border-color: #444 !important; pointer-events: none; }
+        .blue { color: #00c3ff; } .red { color: #ff3d3d; }
+
+        #banker-panel, #end-panel { display: none; background: rgba(255, 215, 0, 0.1); border: 2px dashed gold; padding: 15px; margin: 10px; border-radius: 10px; }
+        .admin-trigger { position: fixed; top: 0; right: 0; width: 50px; height: 50px; opacity: 0.01; z-index: 999; }
+    </style>
+</head>
+<body>
+
+<div id="login-page" class="page active">
+    <div class="header"><h1>دليلك ملك 💰</h1></div>
+    <div class="info-card">
+        للشحن وفتح حساب (10 DT) لـ D17: <br>
+        <span style="font-size: 26px; display: block; margin: 5px 0;">56 151 868</span>
+        <a href="https://wa.me/21656151868?text=أهلاً%20أريد%20شحن%20حسابي%20في%20دليلك%20ملك" target="_blank" class="whatsapp-btn">
+             أرسل سكرين الشحن (WhatsApp) 📱
+        </a>
+    </div>
+    <input type="text" id="user-id" placeholder="إسم المستخدم (User)">
+    <button class="btn-main" onclick="login()">دخول للعب (خصم 10 DT)</button>
+</div>
+
+<div id="game-page" class="page">
+    <div class="header">
+        <p>الرصيد: <b id="balance">0.000</b> DT</p>
+        <div class="dashboard" id="dashboard"></div>
+        <h4 id="msg">اختر صندوقك الأول</h4>
+    </div>
+    
+    <div id="banker-panel">
+        <h3 id="offer-amt">عرض البانكاجي: 0 DT</h3>
+        <button class="btn-main" onclick="acceptOffer()">قبول العرض</button>
+        <button class="btn-main" style="background:#444; color:white;" onclick="refuseOffer()">رفض</button>
+    </div>
+
+    <div id="end-panel">
+        <h3 id="win-msg">مبروك! ربحت: 0 DT</h3>
+        <button class="btn-main" onclick="goToMenu()">العودة للقائمة الرئيسية 🏠</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+</div>
+
+<div id="admin-section" class="page">
+    <div class="header"><h1 style="color:red;">لوحة الآدمن</h1></div>
+    <input type="text" id="admin-user" placeholder="اسم المتسابق">
+    <input type="number" id="admin-amt" placeholder="المبلغ (DT)">
+    <button class="btn-main" style="background:green; color:white;" onclick="handleAdmin('add')">شحن رصيد</button>
+    <button class="btn-main" style="background:red; color:white;" onclick="handleAdmin('sub')">سحب (خلاص)</button>
+    <button class="btn-main" style="margin-top:20px;" onclick="showPage('login-page')">رجوع</button>
+</div>
+
+<div class="admin-trigger" onclick="adminAccess()"></div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('gameDB_Final_Pro')) || {};
+    let currentUser = "";
+    let currentMatch = [];
+    let myBoxIndex = null;
+    let openedCount = 0;
+
+    const allValues = [
+        "0.100", "0.500", "1 DT", "5 DT", "10 DT", "20 DT", "بصل", "شلاكة", "طماطم", "مشطة", "15 DT", "25 DT",
+        "50 DT", "100 DT", "200 DT", "80 DT", "150 DT", "75 DT", "120 DT", "140 DT", "160 DT", "180 DT", "90 DT", "110 DT"
+    ];
+    
+    const badValues = ["شلاكة", "طماطم", "بصل", "مشطة", "0.100", "0.500"];
+
+    function adminAccess() {
+        if(prompt("Admin Code:") === "5615") showPage('admin-section');
+    }
+
+    function handleAdmin(type) {
+        let u = document.getElementById('admin-user').value;
+        let a = parseFloat(document.getElementById('admin-amt').value) || 0;
+        if(u) {
+            db[u] = (type === 'add') ? (db[u] || 0) + a : Math.max(0, (db[u] || 0) - a);
+            localStorage.setItem('gameDB_Final_Pro', JSON.stringify(db));
+            alert("تم التحديث بنجاح!");
+        }
+    }
+
+    function login() {
+        currentUser = document.getElementById('user-id').value;
+        if(db[currentUser] >= 10) {
+            db[currentUser] -= 10;
+            localStorage.setItem('gameDB_Final_Pro', JSON.stringify(db));
+            document.getElementById('balance').innerText = db[currentUser].toFixed(3);
+            showPage('game-page');
+            initGame();
+        } else { alert("الحساب غير موجود أو الرصيد ناقص!"); }
+    }
+
+    function initGame() {
+        document.getElementById('end-panel').style.display = 'none';
+        document.getElementById('grid').style.pointerEvents = 'auto';
+        const grid = document.getElementById('grid');
+        const dash = document.getElementById('dashboard');
+        grid.innerHTML = ""; dash.innerHTML = "";
+        myBoxIndex = null; openedCount = 0;
+        currentMatch = [...allValues].sort(() => Math.random() - 0.5);
+        allValues.forEach(v => {
+            let d = document.createElement('div');
+            d.className = 'dash-val'; d.id = 'dash-' + v; d.innerText = v;
+            dash.appendChild(d);
+        });
+        for(let i=1; i<=24; i++) {
+            let b = document.createElement('div');
+            b.className = 'box'; b.innerHTML = i;
+            b.onclick = function() { openBox(this, i-1); };
+            grid.appendChild(b);
+        }
+    }
+
+    function openBox(el, idx) {
+        if(myBoxIndex === null) {
+            myBoxIndex = idx;
+            let badPick = badValues[Math.floor(Math.random() * badValues.length)];
+            let oldVal = currentMatch[idx];
+            let swapIdx = currentMatch.indexOf(badPick);
+            currentMatch[idx] = badPick;
+            currentMatch[swapIdx] = oldVal;
+            el.innerHTML = "صندوقك";
+            el.style.background = "gold"; el.style.color = "black";
+            document.getElementById('msg').innerText = "واصل حل الصناديق!";
+        } else {
+            if(el.classList.contains('opened')) return;
+            let val = currentMatch[idx];
+            el.innerHTML = val;
+            el.classList.add('opened');
+            if(val.includes('DT') && parseInt(val) >= 50) el.classList.add('red'); else el.classList.add('blue');
+            document.getElementById('dash-' + val).classList.add('removed');
+            openedCount++;
+            if(openedCount === 18) {
+                let offer = (Math.random() * 2 + 0.5).toFixed(3);
+                document.getElementById('offer-amt').innerText = "عرض البانكاجي: " + offer + " DT";
+                document.getElementById('banker-panel').style.display = 'block';
+            }
+            if(openedCount === 23) {
+                let finalVal = currentMatch[myBoxIndex];
+                let winAmt = (finalVal.includes('DT')) ? parseFloat(finalVal) : 0;
+                db[currentUser] += winAmt;
+                localStorage.setItem('gameDB_Final_Pro', JSON.stringify(db));
+                showEndGame("صندوقك فيه: " + finalVal);
+            }
+        }
+    }
+
+    function acceptOffer() {
+        let offer = parseFloat(document.getElementById('offer-amt').innerText.split(': ')[1]);
+        db[currentUser] += offer;
+        localStorage.setItem('gameDB_Final_Pro', JSON.stringify(db));
+        document.getElementById('banker-panel').style.display = 'none';
+        showEndGame("قبلت عرض البانكاجي بـ: " + offer + " DT");
+    }
+
+    function showEndGame(msg) {
+        document.getElementById('grid').style.pointerEvents = 'none';
+        document.getElementById('win-msg').innerText = msg;
+        document.getElementById('end-panel').style.display = 'block';
+    }
+
+    function goToMenu() {
+        showPage('login-page');
+    }
+
+    function refuseOffer() { document.getElementById('banker-panel').style.display = 'none'; }
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+</script>
+</body>
+</html>
