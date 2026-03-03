@@ -42,8 +42,10 @@
     </div>
 
     <script>
-        // --- بدل الرابط هذا بالرابط متاعك من Firebase ---
-        const firebaseConfig = { databaseURL: "https://dlik-mlek-default-rtdb.firebaseio.com" };
+        // الرابط الصحيح متاعك تم وضعه هنا بنجاح
+        const firebaseConfig = { 
+            databaseURL: "https://dlilk-mlek-21ae9-default-rtdb.firebaseio.com/" 
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -52,7 +54,7 @@
         localStorage.setItem('dlik_id_vFinal', myId);
         document.getElementById('uId').innerText = myId;
 
-        // قراءة الرصيد لحظة بلحظة
+        // قراءة الرصيد لحظة بلحظة من السيرفر
         db.ref('players/' + myId).on('value', (s) => {
             let val = (s.val() && s.val().points) ? s.val().points : 0;
             document.getElementById('balance').innerText = val;
@@ -68,7 +70,7 @@
             }
         }
 
-        // لوحة الآدمن (الموزع)
+        // لوحة الموزع (اضغط 3 مرات على العنوان)
         let taps = 0;
         function triggerAdmin() {
             taps++;
@@ -83,7 +85,7 @@
             let t = document.getElementById('targetId').value.trim();
             let a = parseFloat(document.getElementById('amt').value);
             
-            // تصحيح أوتوماتيكي للـ ID إذا كتبت الرقم برك
+            // تصحيح أوتوماتيكي للـ ID
             if(!t.startsWith("ID-")) t = "ID-" + t;
 
             if(!t || isNaN(a)) return alert("ثبت في الـ ID والمبلغ!");
