@@ -82,14 +82,15 @@
     </div>
 
     <div id="admin">
-        <h2 style="color:#ffd700;">🏦 لوحة التحكم (الموزع)</h2>
-        <input type="text" id="targetId" placeholder="ID الكليون">
-        <input type="number" id="amt" placeholder="المبلغ">
+        <h2 style="color:#ffd700;">🏦 لوحة التحكم (الموزع الرئيسي)</h2>
+        <p style="color:#888;">يمكنك شحن رصيد أي ID من هنا</p>
+        <input type="text" id="targetId" placeholder="دخل الـ ID متاع الكليون">
+        <input type="number" id="amt" placeholder="المبلغ (دينار)">
         <br>
-        <button class="btn-main" onclick="moveSold(1)" style="width:40%; background: #0f0;">شحن (+)</button>
-        <button class="btn-main" onclick="moveSold(-1)" style="background:#f00; color:#fff; width:40%">سحب (-)</button>
+        <button class="btn-main" onclick="moveSold(1)" style="width:40%; background: #0f0;">شحن الرصيد (+)</button>
+        <button class="btn-main" onclick="moveSold(-1)" style="background:#f00; color:#fff; width:40%">سحب الرصيد (-)</button>
         <br><br>
-        <button class="btn-main" onclick="closeAdmin()" style="background:#333; color:#fff;">خروج</button>
+        <button class="btn-main" onclick="closeAdmin()" style="background:#333; color:#fff;">إغلاق اللوحة</button>
     </div>
 
     <script>
@@ -107,116 +108,18 @@
         const funnyPrizes = ["شلاكة", "حكة هريسة", "بصلة", "مشط", "خيط كيت", "سروال مقطع", "دينار", "نص دينار", "سيجارو", "دبوزة قازوز", "تلفزة قراندي", "مروحة"];
         const redPrizes = [5, 15, 30, 45, 60, 75, 85, 95, 100, 200, 500, 1000];
 
+        // تحديث الرصيد من السيرفر
         db.ref('players/' + myId).on('value', (snap) => {
             mySold = snap.val() ? snap.val().points : 0;
             document.getElementById('bal1').innerText = mySold.toFixed(3);
             if(document.getElementById('bal2')) document.getElementById('bal2').innerText = mySold.toFixed(3);
         });
 
+        // إذا اللاعب أول مرة يحل، نسجلوه في الداتابيز
+        db.ref('players/' + myId).once('value').then(snap => {
+            if(!snap.exists()) db.ref('players/' + myId).set({ points: 0 });
+        });
+
         function goToGame() {
-            if(mySold < 5) return alert("رصيدك ناقص!");
-            db.ref('players/' + myId).update({ points: mySold - 5 }).then(() => {
-                document.getElementById('page-setup').style.display = 'none';
-                document.getElementById('page-game').style.display = 'block';
-                setupBoard();
-            });
-        }
-
-        function setupBoard() {
-            // توزيع الجوائز: الصناديق فارغة في الأول
-            gameData = new Array(24).fill(null);
-            
-            const l = document.getElementById('col-left'), r = document.getElementById('col-right');
-            l.innerHTML = ''; r.innerHTML = '';
-            funnyPrizes.forEach(v => l.innerHTML += `<div class="p-box p-blue" id="p-${v}">${v}</div>`);
-            redPrizes.forEach(v => r.innerHTML += `<div class="p-box p-red" id="p-${v}">${v} DT</div>`);
-
-            const board = document.getElementById('board');
-            board.innerHTML = '';
-            for(let i=0; i<24; i++) {
-                let b = document.createElement('div');
-                b.className = 'box'; b.innerText = i+1;
-                b.onclick = () => openBox(b, i);
-                board.appendChild(b);
-            }
-        }
-
-        function openBox(el, idx) {
-            if(isGameOver || el.classList.contains('opened')) return;
-
-            // اللحظة اللي يختار فيها صندوقه: "نحشيله" حاجة زرقاء فيه بالسيف
-            if(!myBox) {
-                let randomFunny = funnyPrizes[Math.floor(Math.random() * funnyPrizes.length)];
-                myBox = {idx: idx, val: randomFunny};
-                el.classList.add('mine');
-                
-                // بقية الجوائز تتوزع عشوائياً في الصناديق المتبقية
-                let remainingPrizes = [...funnyPrizes.filter(p => p !== randomFunny), ...redPrizes];
-                remainingPrizes.sort(() => Math.random() - 0.5);
-                
-                let count = 0;
-                for(let i=0; i<24; i++) {
-                    if(i !== idx) {
-                        gameData[i] = remainingPrizes[count];
-                        count++;
-                    } else {
-                        gameData[i] = randomFunny;
-                    }
-                }
-                document.getElementById('msg').innerText = "صندوقك عندك، كمل حل الباقي!";
-            } else {
-                if(idx === myBox.idx) return;
-                el.classList.add('opened');
-                let val = gameData[idx];
-                el.innerText = typeof val === 'number' ? (val + ' DT') : val;
-                if(document.getElementById('p-'+val)) document.getElementById('p-'+val).classList.add('out');
-                boxesOpened++;
-                
-                // عرض البنكاجي ديما يكون طايح باش ميربحش برشة
-                if(boxesOpened % 4 === 0 && boxesOpened < 20) showOffer();
-                if(boxesOpened === 22) showFinalWin(myBox.val);
-            }
-        }
-
-        function showOffer() {
-            // عرض البنكاجي بين 100 فرنك و 1200 مليم (باش ميطمعش)
-            let offer = (Math.random() * 1.1 + 0.100).toFixed(3);
-            document.getElementById('offerAmt').innerText = offer + " DT";
-            document.getElementById('bankerOffer').style.display = 'block';
-            window.currentOffer = parseFloat(offer);
-        }
-
-        function acceptDeal() {
-            isGameOver = true;
-            db.ref('players/' + myId).update({ points: mySold + window.currentOffer }).then(() => {
-                closePopup();
-                showFinalWin(window.currentOffer.toFixed(3) + " DT");
-            });
-        }
-
-        function showFinalWin(val) {
-            isGameOver = true;
-            let winAmt = typeof val === 'number' ? val : 0.100;
-            if (val === myBox.val) db.ref('players/' + myId).update({ points: mySold + winAmt });
-            document.getElementById('winPrizeTxt').innerText = (typeof val === 'number' ? val + " DT" : val);
-            document.getElementById('winPopup').style.display = 'block';
-        }
-
-        function closePopup() { document.getElementById('bankerOffer').style.display = 'none'; }
-
-        function checkAdmin() {
-            if(prompt("كلمة السر:") === "5615") document.getElementById('admin').style.display = 'block';
-        }
-        function moveSold(type) {
-            let tid = document.getElementById('targetId').value.trim();
-            if(!tid.includes("ID-")) tid = "ID-" + tid; 
-            let amount = parseFloat(document.getElementById('amt').value);
-            db.ref('players/' + tid).once('value').then(s => {
-                if(s.exists()) db.ref('players/' + tid).update({ points: s.val().points + (amount * type) });
-                alert("تمت العملية!");
-            });
-        }
-        function closeAdmin() { document.getElementById('admin').style.display = 'none'; }
-    </script>
-</body>
-</html>
+            if(mySold < 5) return alert("رصيدك ناقص! اتصل بالموزع.");
+            db.ref('players/' + myId).update({ points:
