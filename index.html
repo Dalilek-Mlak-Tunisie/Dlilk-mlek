@@ -3,141 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دليلك ملك - النظام المتكامل</title>
+    <title>دليلك ملك - النسخة النهائية</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { background: #000; color: #ffd700; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; margin: 0; padding-bottom: 50px; }
-        .header { background: #1a1a1a; padding: 20px; border-bottom: 3px solid #ffd700; box-shadow: 0 4px 15px rgba(255,215,0,0.2); cursor: pointer; }
-        .card { background: #111; border: 2px solid #ffd700; border-radius: 20px; padding: 25px; margin: 20px; box-shadow: 0 0 20px rgba(255,215,0,0.1); }
-        .btn { background: linear-gradient(145deg, #ffd700, #b8860b); color: #000; border: none; padding: 18px; border-radius: 12px; font-weight: bold; cursor: pointer; margin: 10px; width: 90%; font-size: 18px; transition: 0.3s; }
-        .btn:active { transform: scale(0.95); }
-        #gamePage { display: none; padding: 20px; animation: fadeIn 0.5s; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; }
-        .box { background: #222; border: 2px solid #ffd700; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 28px; border-radius: 15px; cursor: pointer; transition: 0.3s; color: #ffd700; font-weight: bold; }
-        .win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; border: 4px solid #ffd700; padding: 40px; border-radius: 25px; z-index: 3000; display: none; width: 80%; box-shadow: 0 0 50px #000; }
-        #adminPanel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 5000; padding-top: 60px; }
-        input { padding: 15px; width: 80%; margin: 10px; border-radius: 10px; background: #1a1a1a; color: #fff; border: 1px solid #ffd700; font-size: 18px; text-align: center; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        body { background: #000; color: #ffd700; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; user-select: none; }
+        .header { background: linear-gradient(#222, #000); padding: 15px; border-bottom: 2px solid #ffd700; cursor: pointer; }
+        #page-setup { display: block; padding: 15px; }
+        .balance-card { background: #111; border: 2px solid #ffd700; border-radius: 20px; padding: 30px 15px; margin: 25px auto; max-width: 350px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+        .balance-val { font-size: 55px; color: #0f0; margin: 10px 0; font-weight: bold; }
+        
+        .btn-whatsapp { background: #25D366; color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: bold; width: 85%; cursor: pointer; margin: 15px 0; display: inline-block; text-decoration: none; font-size: 17px; box-shadow: 0 4px #128C7E; }
+        .btn-main { background: #ffd700; color: #000; border: none; padding: 18px; border-radius: 12px; font-weight: bold; width: 85%; margin: 10px; cursor: pointer; font-size: 20px; box-shadow: 0 4px #b8860b; }
+        
+        #page-game { display: none; }
+        .top-bar { display: flex; justify-content: space-around; background: #111; padding: 12px; border-bottom: 1px solid #ffd700; font-weight: bold; }
+        .prizes-grid { display: flex; justify-content: space-between; padding: 10px; background: #080808; }
+        .prize-col { display: flex; flex-direction: column; gap: 4px; width: 48%; }
+        .p-box { font-size: 11px; padding: 6px; border-radius: 4px; border: 1px solid #333; font-weight: bold; height: 18px; }
+        .p-blue { background: #001a33; color: #fff; }
+        .p-red { background: #330000; color: #fff; border-color: #600; }
+        .p-box.out { opacity: 0.1; text-decoration: line-through; background: #222; }
+        
+        .boxes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 15px; max-width: 480px; margin: auto; }
+        .box { background: linear-gradient(#ffd700, #ccac00); color: #000; padding: 20px 0; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 20px; box-shadow: 0 5px #886b00; }
+        .box.opened { background: #222 !important; color: #ffd700 !important; box-shadow: none !important; font-size: 12px; }
+        .box.mine { border: 3px solid #fff; box-shadow: 0 0 15px #fff; background: #ffd700; }
+        
+        input { padding: 15px; width: 85%; margin: 10px; border-radius: 8px; border: 1px solid #ffd700; background: #111; color: #fff; text-align: center; font-size: 16px; }
+        #admin { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.98); z-index:9999; padding-top:50px; }
+        .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #151515; border: 2px solid #ffd700; padding: 30px; display: none; z-index: 1000; width: 85%; border-radius: 20px; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
     </style>
 </head>
 <body>
 
-    <div id="shahnPage">
-        <div class="header" onclick="triggerAdmin()"><h1>دليلك ملك 💰</h1></div>
-        <div class="card">
-            <h2 style="margin-top:0;">🏦 محفظة الرصيد</h2>
-            <p style="color: #ccc;">لشحن حسابك، أرسل ID الخاص بك:</p>
-            <p style="font-size: 28px; background: #222; padding: 10px; border-radius: 10px;"><b id="uId">...</b></p>
-            <div style="font-size:32px; color:#0f0; margin: 20px 0;">رصيدك الحالي: <br><b id="balance">0</b> DT</div>
-            <p style="font-size: 14px; color: #888;">D17: 56151868</p>
+    <div class="header" onclick="checkAdmin()">
+        <h1 style="margin:0; font-size:26px;">دليلك ملك 😂</h1>
+    </div>
+
+    <div id="page-setup">
+        <div class="balance-card">
+            <h3 style="margin:0; color:#ccc;">💰 رصيدك الحالي</h3>
+            <div class="balance-val" id="bal1">0.000</div>
+            <div style="font-size:16px; color:#888; margin-bottom:15px;">ID الحساب: <b id="uid1" style="color:#fff">...</b></div>
+            
+            <a id="whatsappBtn" href="#" target="_blank" class="btn-whatsapp">
+                💬 شحن (WhatsApp / D17)
+            </a>
+            <p style="font-size: 12px; color: #666;">يجب شحن الحساب عند الموزع للبدء</p>
         </div>
-        <button class="btn" onclick="goToGame()">إبدأ اللعب الآن (5 DT) 🚀</button>
+        <button class="btn-main" onclick="goToGame()">إبدأ العرض (خصم DT 5)</button>
     </div>
 
-    <div id="gamePage">
-        <h2 id="gameStatus">اختر صندوقك واربح المليون! 🎁</h2>
-        <div class="grid" id="boxGrid"></div>
-        <button class="btn" onclick="location.reload()" style="background:#333; color:#fff; margin-top:30px;">عودة للقائمة</button>
+    <div id="page-game">
+        <div class="top-bar">
+            <div>رصيدك: <span id="bal2" style="color:#0f0">0.000</span></div>
+            <div id="msg">انشالله المليون عندك!</div>
+        </div>
+        <div class="prizes-grid">
+            <div class="prize-col" id="col-left"></div>
+            <div class="prize-col" id="col-right"></div>
+        </div>
+        <div class="boxes-grid" id="board"></div>
     </div>
 
-    <div id="adminPanel">
-        <h2 style="color:#ffd700;">⚙️ لوحة التحكم عن بُعد</h2>
-        <input type="text" id="targetId" placeholder="ID المتسابق (مثلاً: 28653)">
-        <input type="number" id="amt" placeholder="المبلغ المراد شحنه">
-        <button class="btn" onclick="sendSold()">✅ تنفيذ الشحن الفوري</button>
-        <button class="btn" onclick="closeAdmin()" style="background:#500; color:#fff;">إغلاق اللوحة</button>
+    <div id="bankerOffer" class="popup">
+        <h3 style="color:#ffd700;">🏦 عرض البنكاجي</h3>
+        <h1 id="offerAmt" style="font-size:40px; margin:15px 0;">0</h1>
+        <button class="btn-main" onclick="acceptDeal()">ناخذ الكاش</button>
+        <button class="btn-main" onclick="closePopup()" style="background:#333; color:#fff">نكمل نلعب</button>
     </div>
 
-    <div id="winPopup" class="win-popup">
-        <h2 id="winTitle" style="color:#ffd700;">مبروك! 🎉</h2>
-        <p id="winMsg" style="font-size:24px; color:#fff;"></p>
-        <button class="btn" onclick="location.reload()">إضافة للرصيد واللعب مجدداً</button>
+    <div id="winPopup" class="popup">
+        <h2 style="color:#0f0;">🎉 مبروك الفوز!</h2>
+        <p style="font-size:18px; color:#fff;">لقد فزت بـ:</p>
+        <h1 id="winAmtTxt" style="font-size:45px; color:#ffd700; margin:15px 0;">0</h1>
+        <button class="btn-main" onclick="location.reload()">الرجوع للمنيو الرئيسي</button>
+    </div>
+
+    <div id="admin">
+        <h2 style="color:#ffd700;">🏦 لوحة التحكم (الموزع)</h2>
+        <input type="text" id="targetId" placeholder="ID الكليون (مثال: 84658)">
+        <input type="number" id="amt" placeholder="المبلغ بالدينار">
+        <br>
+        <button class="btn-main" onclick="moveSold(1)" style="width:40%; background: #0f0;">شحن (+)</button>
+        <button class="btn-main" onclick="moveSold(-1)" style="background:#f00; color:#fff; width:40%">سحب (-)</button>
+        <br><br>
+        <button class="btn-main" onclick="closeAdmin()" style="background:#333; color:#fff; width:85%; font-size: 14px;">خروج</button>
     </div>
 
     <script>
-        // ربط السيرفر النهائي
+        let myId = localStorage.getItem('dlik_id') || 'ID-' + Math.floor(Math.random() * 89999 + 10000);
+        localStorage.setItem('dlik_id', myId);
+        document.getElementById('uid1').innerText = myId;
+
         const firebaseConfig = { databaseURL: "https://dlilk-mlek-21ae9-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let myId = localStorage.getItem('dlik_id_vFinal') || 'ID-' + Math.floor(Math.random() * 89999 + 10000);
-        localStorage.setItem('dlik_id_vFinal', myId);
-        document.getElementById('uId').innerText = myId;
+        db.ref('players/' + myId).once('value').then(snap => {
+            if(!snap.exists()) db.ref('players/' + myId).set({ points: 0 });
+        });
 
-        // مراقبة الرصيد لحظة بلحظة (من قريب ومن بعيد)
-        db.ref('players/' + myId).on('value', (s) => {
-            let val = (s.val() && s.val().points) ? s.val().points : 0;
-            document.getElementById('balance').innerText = val.toFixed(2);
-            window.currentPoints = val;
+        const phone = "21656151868";
+        const message = encodeURIComponent("سلام، نحب نشحن حسابي D17، الـ ID متاعي هو: " + myId);
+        document.getElementById('whatsappBtn').href = "https://wa.me/" + phone + "?text=" + message;
+
+        let mySold = 0, myBox = null, boxesOpened = 0, isGameOver = false;
+
+        const funnyPrizes = ["شلاكة", "حكة هريسة", "بصلة", "مشط", "خيط كيت", "سروال مقطع", "دينار", "نص دينار", "سيجارو", "دبوزة قازوز", "تلفزة قراندي", "مروحة"];
+        const redPrizes = [5, 15, 30, 45, 60, 75, 85, 95, 100, 200, 500, 1000];
+        let gameData = [...funnyPrizes, ...redPrizes].sort(() => Math.random() - 0.5);
+
+        db.ref('players/' + myId).on('value', (snap) => {
+            mySold = (snap.val() && snap.val().points) ? snap.val().points : 0;
+            document.getElementById('bal1').innerText = mySold.toFixed(3);
+            if(document.getElementById('bal2')) document.getElementById('bal2').innerText = mySold.toFixed(3);
         });
 
         function goToGame() {
-            if(window.currentPoints < 5) {
-                alert("رصيدك غير كافي! أقل مبلغ للدخول هو 5 DT");
-            } else {
-                db.ref('players/' + myId).update({ points: window.currentPoints - 5 });
-                document.getElementById('shahnPage').style.display = 'none';
-                document.getElementById('gamePage').style.display = 'block';
-                initBoxes();
-            }
-        }
-
-        // نظام الصناديق الذكي (المليون مستحيل)
-        function initBoxes() {
-            const grid = document.getElementById('boxGrid');
-            const prizes = ["0.5", "1.2", "2.0", "3.1", "0.2", "خسارة", "0.1", "مليون", "0.8"];
-            prizes.sort(() => Math.random() - 0.5);
-
-            prizes.forEach((p, i) => {
-                let b = document.createElement('div');
-                b.className = 'box';
-                b.innerText = i + 1;
-                b.onclick = function() {
-                    this.style.pointerEvents = 'none'; // منع النقر مرتين
-                    if(p === "مليون" || p === "خسارة") {
-                        this.style.background = "#500";
-                        this.innerText = "❌";
-                        alert("للأسف، الصندوق فارغ! حاول مرة أخرى.");
-                    } else {
-                        this.style.background = "#050";
-                        this.innerText = p + " DT";
-                        // إضافة الربح للرصيد في السيرفر أوتوماتيكياً
-                        db.ref('players/' + myId).update({ points: window.currentPoints + parseFloat(p) });
-                        document.getElementById('winMsg').innerText = "ربحت " + p + " DT أضيفت لرصيدك!";
-                        document.getElementById('winPopup').style.display = 'block';
-                    }
-                };
-                grid.appendChild(b);
+            if(mySold < 5) return alert("عذراً، رصيدك أقل من 5 DT. يرجى الشحن.");
+            db.ref('players/' + myId).update({ points: mySold - 5 }).then(() => {
+                document.getElementById('page-setup').style.display = 'none';
+                document.getElementById('page-game').style.display = 'block';
+                setupBoard();
             });
         }
 
-        // لوحة الموزع (3 نقرات على العنوان)
-        let taps = 0;
-        function triggerAdmin() {
-            taps++;
-            if(taps >= 3) {
-                let p = prompt("كود الوصول السريع:");
-                if(p === "5615") document.getElementById('adminPanel').style.display = 'block';
-                taps = 0;
+        function setupBoard() {
+            const l = document.getElementById('col-left'), r = document.getElementById('col-right');
+            l.innerHTML = ''; r.innerHTML = '';
+            funnyPrizes.forEach(v => l.innerHTML += `<div class="p-box p-blue" id="p-${v}">${v}</div>`);
+            redPrizes.forEach(v => r.innerHTML += `<div class="p-box p-red" id="p-${v}">${v >= 1000 ? '1000 DT' : v + ' DT'}</div>`);
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            for(let i=0; i<24; i++) {
+                let b = document.createElement('div');
+                b.className = 'box'; b.innerText = i+1;
+                b.onclick = () => openBox(b, i);
+                board.appendChild(b);
             }
         }
-        function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
 
-        function sendSold() {
-            let t = document.getElementById('targetId').value.trim();
-            if(!t.startsWith("ID-")) t = "ID-" + t;
-            let a = parseFloat(document.getElementById('amt').value);
-            if(!t || isNaN(a)) return alert("خطأ في البيانات!");
+        function openBox(el, idx) {
+            if(isGameOver || el.classList.contains('opened')) return;
+            if(!myBox) {
+                myBox = {idx: idx, val: gameData[idx]};
+                el.classList.add('mine');
+                document.getElementById('msg').innerText = "صندوقك اخترته! كمل حل الباقي.";
+            } else {
+                if(idx === myBox.idx) return;
+                el.classList.add('opened');
+                let val = gameData[idx];
+                el.innerText = typeof val === 'number' ? (val + ' DT') : val;
+                let tag = document.getElementById('p-'+val);
+                if(tag) tag.classList.add('out');
+                boxesOpened++;
+                if(boxesOpened % 4 === 0 && boxesOpened < 20) showOffer();
+                if(boxesOpened === 22) showFinalWin(myBox.val);
+            }
+        }
 
-            db.ref('players/' + t).once('value').then(s => {
-                let old = (s.val() && s.val().points) ? s.val().points : 0;
-                db.ref('players/' + t).set({ points: old + a }).then(() => {
-                    alert("✅ تم إرسال " + a + " DT بنجاح للحساب " + t);
-                    closeAdmin();
+        function showOffer() {
+            let offer = (Math.random() * 1.5 + 0.200).toFixed(3);
+            document.getElementById('offerAmt').innerText = offer + " DT";
+            document.getElementById('bankerOffer').style.display = 'block';
+            window.currentOffer = parseFloat(offer);
+        }
+
+        function acceptDeal() {
+            isGameOver = true;
+            db.ref('players/' + myId).update({ points: mySold + window.currentOffer }).then(() => {
+                closePopup();
+                showFinalWin(window.currentOffer.toFixed(3) + " DT");
+            });
+        }
+
+        function showFinalWin(prize) {
+            isGameOver = true;
+            let winVal = (typeof prize === 'number') ? prize : 0.100;
+            // إذا كان الجائزة "شلاكة" أو حاجة مضحكة، نصب رصيد رمزي
+            if (isNaN(winVal)) winVal = 0.100; 
+
+            document.getElementById('winAmtTxt').innerText = (typeof prize === 'number' ? prize + " DT" : prize);
+            document.getElementById('winPopup').style.display = 'block';
+            
+            // تحديث الرصيد في حالة الصندوق الأخير
+            if (boxesOpened === 22) {
+                db.ref('players/' + myId).update({ points: mySold + winVal });
+            }
+        }
+
+        function closePopup() { document.getElementById('bankerOffer').style.display = 'none'; }
+
+        let clicks = 0;
+        function checkAdmin() {
+            clicks++;
+            if(clicks >= 3) {
+                let pass = prompt("كلمة السر السرية للموزع:");
+                if(pass === "5615") document.getElementById('admin').style.display = 'block';
+                clicks = 0;
+            }
+        }
+
+        function moveSold(type) {
+            let tid = document.getElementById('targetId').value.trim();
+            if(!tid.includes("ID-")) tid = "ID-" + tid; 
+            let amount = parseFloat(document.getElementById('amt').value);
+            if(!tid || isNaN(amount)) return alert("دخل ID والمبلغ صحيح!");
+            db.ref('players/' + tid).once('value').then(s => {
+                let cur = (s.exists() && s.val().points) ? s.val().points : 0;
+                db.ref('players/' + tid).update({ points: cur + (amount * type) }).then(() => {
+                    alert("تمت العملية بنجاح للـ ID: " + tid);
+                    document.getElementById('amt').value = "";
                 });
             });
         }
+        function closeAdmin() { document.getElementById('admin').style.display = 'none'; }
     </script>
 </body>
 </html>
