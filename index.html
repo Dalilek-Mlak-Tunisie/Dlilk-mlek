@@ -3,30 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دليلك ملك - الموزع المعتمد</title>
+    <title>دليلك ملك - النسخة الرسمية</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         body { background: #000; color: #ffd700; font-family: sans-serif; text-align: center; margin: 0; }
         .header { background: #1a1a1a; padding: 15px; border-bottom: 2px solid #ffd700; cursor: pointer; }
-        
-        /* صفحة الدخول */
-        #loginPage { padding: 20px 15px; display: block; }
-        .card { background: #1a1a1a; border: 2px solid #ffd700; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 0 15px rgba(255,215,0,0.2); }
-        .whatsapp-btn { background: #25D366; color: white; padding: 12px; border-radius: 8px; text-decoration: none; display: block; margin: 15px auto; width: 80%; font-weight: bold; }
-        
-        /* صفحة اللعب */
-        #gamePage { display: none; padding-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 15px; max-width: 450px; margin: auto; }
-        .box { background: linear-gradient(#ffd700, #b8860b); color: #000; padding: 25px 5px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 18px; box-shadow: 0 4px #000; }
-        .box.opened { background: #333 !important; color: #777 !important; box-shadow: none; transform: translateY(3px); }
-        
-        /* لوحة الموزع */
-        #adminPanel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 1000; padding-top: 50px; }
-        .btn { background: #ffd700; color: #000; border: none; padding: 15px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 10px; width: 85%; font-size: 16px; }
-        input { padding: 15px; width: 85%; margin: 10px; border-radius: 8px; border: 1px solid #ffd700; background: #111; color: #fff; text-align: center; font-size: 18px; }
-        
-        .status-bar { background: #222; padding: 10px; margin: 10px; border-radius: 10px; border: 1px solid #444; }
+        .card { background: #111; border: 2px solid #ffd700; border-radius: 15px; padding: 20px; margin: 20px; box-shadow: 0 0 10px rgba(255,215,0,0.3); }
+        .btn { background: #ffd700; color: #000; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 10px; width: 85%; font-size: 16px; }
+        input { padding: 15px; width: 85%; margin: 10px; border-radius: 8px; border: 1px solid #ffd700; background: #222; color: #fff; text-align: center; font-size: 18px; }
+        #adminPanel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; padding-top: 50px; }
+        .status { font-size: 20px; margin: 10px; color: #0f0; }
     </style>
 </head>
 <body>
@@ -35,115 +22,76 @@
         <h1>دليلك ملك</h1>
     </div>
 
-    <div id="loginPage">
+    <div id="mainPage">
         <div class="card">
-            <h2 style="margin:0;">🏦 شحن الرصيد</h2>
-            <p>D17: <b style="color:#fff; font-size:20px;">56151868</b></p>
-            <p>معرفك (ID): <b id="displayId" style="color:#fff; font-size:24px; letter-spacing:1px;">...</b></p>
-            <a href="https://wa.me/21656151868" class="whatsapp-btn">تواصل WhatsApp</a>
+            <h2>🏦 شحن الرصيد</h2>
+            <p>D17: <b style="color:#fff;">56151868</b></p>
+            <p>ID الخاص بك: <b id="uId" style="color:#fff; font-size:24px;">...</b></p>
+            <hr border="1" color="#ffd700">
+            <div class="status">رصيدك: <b id="balance">0</b> DT</div>
         </div>
-        
-        <div class="status-bar">
-            الرصيد المتوفر: <b id="mainBalance" style="font-size:24px; color:#0f0;">0</b> <small>DT</small>
-        </div>
-        
-        <button class="btn" onclick="enterGame()">إبدأ اللعب الآن (5 DT)</button>
-        <p style="font-size:12px; color:#666;">يتم خصم 5 دينار عند كل دخول للعبة</p>
-    </div>
-
-    <div id="gamePage">
-        <div class="status-bar">
-            💰 الرصيد الحالي: <b id="gameBalance">0</b> DT
-        </div>
-        <p id="msg">اختر صندوقك الأساسي</p>
-        <div class="grid" id="board"></div>
-        <button class="btn" onclick="location.reload()" style="background:#333; color:#fff;">العودة للقائمة الرئيسية</button>
+        <button class="btn" onclick="startGame()">إبدأ اللعب الآن (5 DT)</button>
     </div>
 
     <div id="adminPanel">
-        <h2 style="color:#ffd700;">🏦 لوحة الموزع المعتمد</h2>
-        <input type="text" id="targetId" placeholder="ID المتسابق (مثل ID-12345)">
-        <input type="number" id="pointsAmount" placeholder="المبلغ المراد شحنه">
-        <br>
-        <button class="btn" onclick="updateSold()">✅ تنفيذ الشحن الفوري</button>
+        <h2>🏦 لوحة الموزع المعتمد</h2>
+        <input type="text" id="targetId" placeholder="ID المتسابق (مثلاً: 28653)">
+        <input type="number" id="amt" placeholder="المبلغ (DT)">
+        <button class="btn" onclick="sendSold()">✅ تنفيذ الشحن الفوري</button>
         <button class="btn" onclick="document.getElementById('adminPanel').style.display='none'" style="background:#444; color:#fff">خروج</button>
     </div>
 
     <script>
-        // ربط Firebase
+        // --- بدل الرابط هذا بالرابط متاعك من Firebase ---
         const firebaseConfig = { databaseURL: "https://dlik-mlek-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // إنشاء الـ ID وحفظه
+        // صنع الـ ID للمتسابق
         let myId = localStorage.getItem('dlik_id_vFinal') || 'ID-' + Math.floor(Math.random() * 89999 + 10000);
         localStorage.setItem('dlik_id_vFinal', myId);
-        document.getElementById('displayId').innerText = myId;
+        document.getElementById('uId').innerText = myId;
 
-        let mySold = 0;
-        
-        // مراقبة الرصيد لايف (Real-time)
-        db.ref('players/' + myId).on('value', (snapshot) => {
-            mySold = (snapshot.val() && snapshot.val().points) ? snapshot.val().points : 0;
-            document.getElementById('mainBalance').innerText = mySold;
-            document.getElementById('gameBalance').innerText = mySold;
+        // قراءة الرصيد لحظة بلحظة
+        db.ref('players/' + myId).on('value', (s) => {
+            let val = (s.val() && s.val().points) ? s.val().points : 0;
+            document.getElementById('balance').innerText = val;
+            window.currentPoints = val;
         });
 
-        function enterGame() {
-            if(mySold < 5) return alert("رصيدك غير كافٍ! يرجى الشحن أولاً (5 DT)");
-            
-            // خصم حق الطرح
-            db.ref('players/' + myId).update({ points: mySold - 5 }).then(() => {
-                document.getElementById('loginPage').style.display = 'none';
-                document.getElementById('gamePage').style.display = 'block';
-                initBoard();
-            });
-        }
-
-        function initBoard() {
-            const board = document.getElementById('board');
-            board.innerHTML = "";
-            // 24 صندوق، المليون مستحيل يطيح في صندوقك (حظ 2%)
-            let prizes = [0.1, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 5000, 10000, 50000, 100000, 1000000].sort(() => Math.random() - 0.5);
-            
-            for(let i=0; i<prizes.length; i++) {
-                let b = document.createElement('div');
-                b.className = 'box';
-                b.innerText = i + 1;
-                b.onclick = () => {
-                    if(b.classList.contains('opened')) return;
-                    b.classList.add('opened');
-                    b.innerText = prizes[i] >= 1000 ? (prizes[i]/1000 + "K") : prizes[i];
-                };
-                board.appendChild(b);
+        function startGame() {
+            if(window.currentPoints < 5) {
+                alert("رصيدك غير كافي، يرجى الشحن (أقل مبلغ 5 DT)");
+            } else {
+                db.ref('players/' + myId).update({ points: window.currentPoints - 5 });
+                alert("بالتوفيق في اللعبة!");
             }
         }
 
-        // لوحة الآدمن
-        let clicks = 0;
+        // لوحة الآدمن (الموزع)
+        let taps = 0;
         function triggerAdmin() {
-            clicks++;
-            if(clicks >= 3) {
-                let p = prompt("كود الموزع السري:");
+            taps++;
+            if(taps >= 3) {
+                let p = prompt("كود الموزع:");
                 if(p === "5615") document.getElementById('adminPanel').style.display = 'block';
-                clicks = 0;
+                taps = 0;
             }
         }
 
-        function updateSold() {
+        function sendSold() {
             let t = document.getElementById('targetId').value.trim();
-            let a = parseFloat(document.getElementById('pointsAmount').value);
+            let a = parseFloat(document.getElementById('amt').value);
             
-            if(!t || isNaN(a)) return alert("الرجاء إدخال ID صحيح ومبلغ!");
+            // تصحيح أوتوماتيكي للـ ID إذا كتبت الرقم برك
+            if(!t.startsWith("ID-")) t = "ID-" + t;
+
+            if(!t || isNaN(a)) return alert("ثبت في الـ ID والمبلغ!");
 
             db.ref('players/' + t).once('value').then(s => {
-                let current = (s.val() && s.val().points) ? s.val().points : 0;
-                // تحديث الرصيد باستعمال SET لضمان السرعة
-                db.ref('players/' + t).set({ 
-                    points: current + a,
-                    updateTime: Date.now() 
-                }).then(() => {
-                    alert("✅ تم بنجاح شحن " + a + " DT للحساب: " + t);
+                let old = (s.val() && s.val().points) ? s.val().points : 0;
+                db.ref('players/' + t).set({ points: old + a }).then(() => {
+                    alert("✅ تم شحن " + a + " DT للحساب: " + t);
                     document.getElementById('adminPanel').style.display = 'none';
                 });
             });
